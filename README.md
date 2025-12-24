@@ -48,19 +48,19 @@ Make sure you have the SilentEdit plugin enabled under Vencord plugins.
 
 1. Hover over a message you sent that you wish to silently edit.
 
-<img width="583" src="https://github.com/user-attachments/assets/7b2af585-fecb-4a05-a410-7cfee2de51da" />
+<img width="821" src="https://github.com/user-attachments/assets/5d104f31-1f59-43cb-bfe3-1165055712ce" />
 
 2. Click the "Silent Edit" red pencil icon in the message popover menu.
 
 3. Discord's native edit interface will open - edit your message as normal and press Enter.
 
-<img width="583" src="https://github.com/user-attachments/assets/883f0d72-f7ce-4086-b2df-7488448a4f68" />
+<img width="821" src="https://github.com/user-attachments/assets/5707ae38-2bc4-4d5c-9cbd-3a549c76e60f" />
 
 5. The message will be silently edited without showing the "(edited)" and does not appear on Vencord message logger. Additionally, the server-side original will be handled according to your settings.
 
-<img width="583" src="https://github.com/user-attachments/assets/87c7fe23-76d2-41a6-94b6-374c325c67fa" />
+<img width="821" src="https://github.com/user-attachments/assets/da48788e-c4f1-4cea-9616-c2b8e90ff4f4" />
 
-<sub>Note: If "Delete Original Message" is enabled, the edited message will be chronologically re-ordered after client reload.</sub>
+<sub>Note: The edited message will be chronologically re-ordered after client reload.</sub>
 
 ## Settings
 
