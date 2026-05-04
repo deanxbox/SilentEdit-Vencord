@@ -1,8 +1,14 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2026 Vendicated and contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 import { addMessagePopoverButton as addButton, removeMessagePopoverButton as removeButton } from "@api/MessagePopover";
 import { definePluginSettings } from "@api/Settings";
 import definePlugin, { OptionType } from "@utils/types";
-import { ChannelStore, Constants, RestAPI, UserStore } from "@webpack/common";
 import { findByPropsLazy } from "@webpack";
+import { ChannelStore, Constants, MessageStore, RestAPI, UserStore } from "@webpack/common";
 
 const MessageActions = findByPropsLazy("deleteMessage", "startEditMessage");
 
@@ -20,6 +26,11 @@ const settings = definePluginSettings({
     suppressNotifications: {
         type: OptionType.BOOLEAN,
         description: "Recommended for use in DMs to prevent pinging users.",
+        default: false
+    },
+    interceptAllEdits: {
+        type: OptionType.BOOLEAN,
+        description: "Silently edit every message you edit through Discord's normal edit flows, including shortcuts like Up Arrow.",
         default: false
     },
     accentColor: {
@@ -66,12 +77,49 @@ function deleteMessage(channelId: string, messageId: string) {
     });
 }
 
+async function silentEditMessage(channelId: string, messageId: string, content: string, messageReference?: any) {
+    let sentReplacement = false;
+
+    try {
+        await sendMessage(
+            content,
+            messageId,
+            channelId,
+            settings.store.suppressNotifications,
+            messageReference
+        );
+        sentReplacement = true;
+
+        await sleep(settings.store.deleteDelay);
+
+        if (settings.store.deleteOriginalMessage) {
+            await deleteMessage(channelId, messageId);
+        }
+
+        return true;
+    } catch (error) {
+        console.error("[SilentEdit] Error:", error);
+        return sentReplacement;
+    }
+}
+
 export default definePlugin({
     name: "SilentEdit",
     description: "\"Silently\" edit a message without showing the edit tag and bypass Vencord's message logger.",
     authors: [{ name: "Aurick", id: 1348025017233047634n }],
     dependencies: ["MessagePopoverAPI"],
     settings,
+
+    async onBeforeMessageEdit(channelId, messageId, messageObj) {
+        if (!settings.store.interceptAllEdits || messageObj.content.length === 0) return;
+
+        const msg = MessageStore.getMessage(channelId, messageId);
+        if (!msg || msg.author.id !== UserStore.getCurrentUser().id) return;
+
+        if (await silentEditMessage(channelId, messageId, messageObj.content, msg.messageReference)) {
+            return { cancel: true };
+        }
+    },
 
     start() {
         addButton("SilentEdit", msg => {
@@ -89,23 +137,7 @@ export default definePlugin({
                         return originalEditMessage.apply(this, arguments);
                     }
 
-                    try {
-                        await sendMessage(
-                            content.content,
-                            msg.id,
-                            channelId,
-                            settings.store.suppressNotifications,
-                            msg.messageReference
-                        );
-
-                        await sleep(settings.store.deleteDelay);
-
-                        if (settings.store.deleteOriginalMessage) {
-                            await deleteMessage(channelId, messageId);
-                        }
-                    } catch (error) {
-                        console.error("[SilentEdit] Error:", error);
-                    }
+                    await silentEditMessage(channelId, messageId, content.content, msg.messageReference);
                 };
             };
 
@@ -116,7 +148,7 @@ export default definePlugin({
                 channel: ChannelStore.getChannel(msg.channel_id),
                 onClick: handleClick
             };
-        });
+        }, SilentEditIcon);
     },
 
     stop() {
